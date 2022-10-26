@@ -1,10 +1,12 @@
-<div class="container">
-
-</div>
-
 <header class="header">
-    <form action="form-search">
-        <label for="searchQuery">What's need to find?</label>
-        <input type="text" name="searchQuery" placeholder="What's to find?" />
+    <form class="search-form" id="search-form">
+        <input type="text" name="searchQuery" autocomplete="off" placeholder="Search images..." />
+        <button type="submit"></button>
     </form>
 </header>
+<div class="container">
+    <div class="gallery">
+        <!-- Картки зображень -->
+    </div>
+    <button type="button" class="load-more">Load more</button>
+</div>
