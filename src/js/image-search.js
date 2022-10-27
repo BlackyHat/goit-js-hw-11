@@ -1,4 +1,3 @@
-import { Notify } from 'notiflix';
 import axios from 'axios';
 
 const URL = 'https://pixabay.com/api/';
@@ -16,43 +15,25 @@ export class ImageApiService {
   }
 
   async getDataApi() {
-    // try {
-    const searchParams = new URLSearchParams({
-      key: PIXABAY_API_KEY,
-      image_type: IMAGE_TYPE,
-      orientation: ORIENTATION,
-      safesearch: SAFESEARCH,
-      per_page: PER_PAGE,
-      page: this.resultPage,
-      q: this.searchQuery,
-    });
-
-    const url = `${URL}?${searchParams}`;
-    const response = await axios.get(url);
-    return response.data;
-  }
-
-  async getImagess() {
     try {
-      await this.getDataApi().then(({ hits, totalHits }) => {
-        if (totalHits) {
-          this.setTotalHits(totalHits);
-          this.displayResQnt(totalHits);
-          this.incrementResultPage();
-          //   console.log(hits);
-          return hits;
-        }
-        return Notify.info(`0 res founded. Let's try some other query...`);
+      const searchParams = new URLSearchParams({
+        key: PIXABAY_API_KEY,
+        image_type: IMAGE_TYPE,
+        orientation: ORIENTATION,
+        safesearch: SAFESEARCH,
+        per_page: PER_PAGE,
+        page: this.resultPage,
+        q: this.searchQuery,
       });
-    } catch (error) {
-      Notify.failure('Some error');
-      console.error(error);
-    }
-  }
 
-  displayResQnt(tHits) {
-    if (tHits > 0 && this.resultPage === 1) {
-      Notify.success(`Hooray! We found ${this.totalHits} images.`);
+      const url = `${URL}?${searchParams}`;
+      const response = await axios.get(url);
+      if (!response.status) {
+        throw new Error('Something goes wrong');
+      }
+      return response.data;
+    } catch (error) {
+      Notify.failure(error.message);
     }
   }
 
