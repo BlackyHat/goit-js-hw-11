@@ -2,13 +2,12 @@ import { Notify } from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import { ImageApiService, PER_PAGE } from './image-search';
-import throttle from 'lodash.throttle';
 import debounce from 'lodash.debounce';
 
 const imageApiService = new ImageApiService();
 const lightbox = new SimpleLightbox('.gallery a', {
-  //   captionsData: 'alt',
-  captionDelay: 300,
+  captionsData: 'alt',
+  captionDelay: 100,
 });
 const refs = {
   form: document.querySelector('.search-form'),
@@ -16,6 +15,7 @@ const refs = {
   moreBtn: document.querySelector('.load-more'),
 };
 let renderImgs = 0;
+let isSearchEnd = false;
 // let totalImgs = 0; сюди змінну забрати щлб не в класі була а обробнику можна
 //====================================================================== messages
 const END_MSG = () =>
@@ -29,21 +29,21 @@ const SUCSESS_MSG = quantity =>
 //======================================================================
 
 refs.form.addEventListener('submit', onSubmitSearch);
-refs.moreBtn.addEventListener('click', getImages);
+// refs.moreBtn.addEventListener('click', getImages);
 
-hideMoreBtn();
-
+// hideMoreBtn();
 function onSubmitSearch(e) {
+  clearResults();
   e.preventDefault();
-  hideMoreBtn();
+  scrollToTop();
+  //   hideMoreBtn();
   renderImgs = 0;
   imageApiService.searchQuery =
     e.currentTarget.elements.searchQuery.value.trim();
   imageApiService.resetResultPage();
-  clearResults();
+  window.addEventListener('scroll', loadNext);
+
   getImages();
-  //================================================================
-  //==================================================================
 }
 
 function getImages() {
@@ -51,8 +51,9 @@ function getImages() {
     .getDataApi()
     .then(({ hits, totalHits }) => {
       renderImgs += hits.length;
-
       if (!totalHits) {
+        window.removeEventListener('scroll', loadNext);
+        isSearchEnd = true;
         throw new Error(ERR_MSG());
       }
       searchResultMsg(imageApiService.resultPage, totalHits);
@@ -60,11 +61,13 @@ function getImages() {
 
       if (totalHits > renderImgs) {
         imageApiService.incrementResultPage();
-        imageApiService.setTotalHits(totalHits);
-        showMoreBtn();
+        // showMoreBtn();
+      } else {
+        window.removeEventListener('scroll', loadNext);
+        isSearchEnd = true;
       }
+
       if (renderImgs === totalHits && totalHits > PER_PAGE) {
-        hideMoreBtn();
         throw new Error(END_MSG());
       }
     })
@@ -106,6 +109,8 @@ function createMarkup(arr) {
     )
     .join('');
   refs.gallery.insertAdjacentHTML('beforeEnd', markup);
+  console.log(lightbox);
+  console.log('оновили галерею');
   lightbox.refresh();
 }
 
@@ -113,44 +118,39 @@ function clearResults() {
   refs.gallery.innerHTML = '';
 }
 //==================================================================show/hide Load More
-function showMoreBtn() {
-  refs.moreBtn.classList.remove('visually-hidden');
-}
-function hideMoreBtn() {
-  refs.moreBtn.classList.add('visually-hidden');
-}
+// function showMoreBtn() {
+//   refs.moreBtn.classList.remove('visually-hidden');
+// }
+// function hideMoreBtn() {
+//   refs.moreBtn.classList.add('visually-hidden');
+// }
 //==================================================================add smooth scroll
 
-window.addEventListener(
-  'scroll',
-  //   debounce(smoothScroll, 300),
-  //   throttle(smoothScroll, 1000)
-  debounce(smoothScroll, 500)
-);
+// const smoothScroll = debounce(() => {
+//   const { height: cardHeight } = document
+//     .querySelector('.gallery')
+//     .firstElementChild.getBoundingClientRect();
+//   window.scrollBy({
+//     top: cardHeight * 2,
+//     behavior: 'smooth',
+//   });
+// }, 300);
 
-function smoothScroll() {
-  const { height: cardHeight } = document
-    .querySelector('.gallery')
-    .firstElementChild.getBoundingClientRect();
-  console.log('скроллимо');
-  window.scrollBy({
-    top: cardHeight * 2,
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
     behavior: 'smooth',
   });
 }
 //==================================================================infinite scroll
-// let elem = document.querySelector('.gallery');
-// let infScroll = new InfiniteScroll(elem, {
-//   // options
-//   path: '.load-more',
-//   append: '.gallery',
-//   history: true,
-//   hideNav: '.load-more',
-// });
 
-// $('.article-feed').infiniteScroll({
-//   path: '.pagination__next',
-//   append: '.article',
-//   status: '.scroller-status',
-//   hideNav: '.pagination',
-// });
+const loadNext = debounce(() => {
+  const beforeEndPx = 100;
+  if (
+    window.scrollY + window.innerHeight >
+      document.documentElement.scrollHeight - beforeEndPx &&
+    !isSearchEnd
+  ) {
+    getImages();
+  }
+}, 150);

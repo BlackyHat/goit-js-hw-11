@@ -11,7 +11,6 @@ export class ImageApiService {
   constructor() {
     this.searchQuery = '';
     this.resultPage = 1;
-    this.totalHits = 0;
   }
 
   async getDataApi() {
@@ -35,10 +34,6 @@ export class ImageApiService {
     } catch (error) {
       Notify.failure(error.message);
     }
-  }
-
-  setTotalHits(x) {
-    this.totalHits = x;
   }
 
   resetResultPage() {
